@@ -12,10 +12,11 @@ const POUND_TO_KG_FACTOR = 0.453592;
 export function PoundsToKgConverter() {
   const [pounds, setPounds] = useState<string>('');
   const [kilograms, setKilograms] = useState<string>('');
+  const [lastChanged, setLastChanged] = useState<'pounds' | 'kg' | null>(null);
 
   useEffect(() => {
-    if (pounds === '') {
-      setKilograms('');
+    if (lastChanged === 'kg' || pounds === '') {
+      if (pounds === '' && lastChanged === 'pounds') setKilograms('');
       return;
     }
     const poundsNum = parseFloat(pounds);
@@ -24,10 +25,29 @@ export function PoundsToKgConverter() {
     } else {
       setKilograms('Invalid input');
     }
-  }, [pounds]);
+  }, [pounds, lastChanged]);
+
+  useEffect(() => {
+    if (lastChanged === 'pounds' || kilograms === '') {
+      if (kilograms === '' && lastChanged === 'kg') setPounds('');
+      return;
+    }
+    const kgNum = parseFloat(kilograms);
+    if (!isNaN(kgNum)) {
+      setPounds((kgNum / POUND_TO_KG_FACTOR).toFixed(2));
+    } else {
+      setPounds('Invalid input');
+    }
+  }, [kilograms, lastChanged]);
 
   const handlePoundsChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPounds(e.target.value);
+    setLastChanged('pounds');
+  };
+
+  const handleKilogramsChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setKilograms(e.target.value);
+    setLastChanged('kg');
   };
 
   return (
@@ -37,7 +57,7 @@ export function PoundsToKgConverter() {
           <Scale className="h-6 w-6 text-primary" />
           Pounds to Kilograms
         </CardTitle>
-        <CardDescription>Convert weights from pounds to kilograms.</CardDescription>
+        <CardDescription>Convert weights between pounds and kilograms.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
@@ -56,12 +76,12 @@ export function PoundsToKgConverter() {
           <Label htmlFor="kilograms-p2k" className="text-sm font-medium">Kilograms (kg)</Label>
           <Input
             id="kilograms-p2k"
-            type="text"
+            type="number"
             value={kilograms}
-            readOnly
-            placeholder="Result in kg"
-            aria-label="Kilograms result"
-            className="mt-1 bg-muted border-dashed"
+            onChange={handleKilogramsChange}
+            placeholder="Enter kilograms"
+            aria-label="Kilograms input"
+            className="mt-1"
           />
         </div>
       </CardContent>

@@ -12,10 +12,11 @@ const MILE_TO_KM_FACTOR = 1.60934;
 export function MilesToKmConverter() {
   const [miles, setMiles] = useState<string>('');
   const [kilometers, setKilometers] = useState<string>('');
+  const [lastChanged, setLastChanged] = useState<'miles' | 'km' | null>(null);
 
   useEffect(() => {
-    if (miles === '') {
-      setKilometers('');
+    if (lastChanged === 'km' || miles === '') {
+      if (miles === '' && lastChanged === 'miles') setKilometers('');
       return;
     }
     const milesNum = parseFloat(miles);
@@ -24,10 +25,29 @@ export function MilesToKmConverter() {
     } else {
       setKilometers('Invalid input');
     }
-  }, [miles]);
+  }, [miles, lastChanged]);
+
+  useEffect(() => {
+    if (lastChanged === 'miles' || kilometers === '') {
+      if (kilometers === '' && lastChanged === 'km') setMiles('');
+      return;
+    }
+    const kmNum = parseFloat(kilometers);
+    if (!isNaN(kmNum)) {
+      setMiles((kmNum / MILE_TO_KM_FACTOR).toFixed(2));
+    } else {
+      setMiles('Invalid input');
+    }
+  }, [kilometers, lastChanged]);
 
   const handleMilesChange = (e: ChangeEvent<HTMLInputElement>) => {
     setMiles(e.target.value);
+    setLastChanged('miles');
+  };
+
+  const handleKilometersChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setKilometers(e.target.value);
+    setLastChanged('km');
   };
 
   return (
@@ -37,7 +57,7 @@ export function MilesToKmConverter() {
           <Milestone className="h-6 w-6 text-primary" />
           Miles to Kilometers
         </CardTitle>
-        <CardDescription>Convert distances from miles to kilometers.</CardDescription>
+        <CardDescription>Convert distances between miles and kilometers.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
@@ -56,12 +76,12 @@ export function MilesToKmConverter() {
           <Label htmlFor="kilometers-m2k" className="text-sm font-medium">Kilometers</Label>
           <Input
             id="kilometers-m2k"
-            type="text"
+            type="number"
             value={kilometers}
-            readOnly
-            placeholder="Result in km"
-            aria-label="Kilometers result"
-            className="mt-1 bg-muted border-dashed"
+            onChange={handleKilometersChange}
+            placeholder="Enter kilometers"
+            aria-label="Kilometers input"
+            className="mt-1"
           />
         </div>
       </CardContent>

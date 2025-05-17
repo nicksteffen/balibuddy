@@ -12,10 +12,11 @@ const ML_TO_OZ_FACTOR = 0.033814;
 export function MlToOzConverter() {
   const [milliliters, setMilliliters] = useState<string>('');
   const [ounces, setOunces] = useState<string>('');
+  const [lastChanged, setLastChanged] = useState<'ml' | 'oz' | null>(null);
 
   useEffect(() => {
-    if (milliliters === '') {
-      setOunces('');
+    if (lastChanged === 'oz' || milliliters === '') {
+      if (milliliters === '' && lastChanged === 'ml') setOunces('');
       return;
     }
     const mlNum = parseFloat(milliliters);
@@ -24,10 +25,29 @@ export function MlToOzConverter() {
     } else {
       setOunces('Invalid input');
     }
-  }, [milliliters]);
+  }, [milliliters, lastChanged]);
+
+  useEffect(() => {
+    if (lastChanged === 'ml' || ounces === '') {
+      if (ounces === '' && lastChanged === 'oz') setMilliliters('');
+      return;
+    }
+    const ozNum = parseFloat(ounces);
+    if (!isNaN(ozNum)) {
+      setMilliliters((ozNum / ML_TO_OZ_FACTOR).toFixed(2));
+    } else {
+      setMilliliters('Invalid input');
+    }
+  }, [ounces, lastChanged]);
 
   const handleMillilitersChange = (e: ChangeEvent<HTMLInputElement>) => {
     setMilliliters(e.target.value);
+    setLastChanged('ml');
+  };
+
+  const handleOuncesChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setOunces(e.target.value);
+    setLastChanged('oz');
   };
 
   return (
@@ -37,7 +57,7 @@ export function MlToOzConverter() {
           <Pipette className="h-6 w-6 text-primary" />
           Milliliters to Ounces
         </CardTitle>
-        <CardDescription>Convert volumes from milliliters to fluid ounces (fl oz).</CardDescription>
+        <CardDescription>Convert volumes between milliliters (ml) and fluid ounces (fl oz).</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
@@ -56,12 +76,12 @@ export function MlToOzConverter() {
           <Label htmlFor="ounces" className="text-sm font-medium">Fluid Ounces (fl oz)</Label>
           <Input
             id="ounces"
-            type="text"
+            type="number"
             value={ounces}
-            readOnly
-            placeholder="Result in fl oz"
-            aria-label="Fluid ounces result"
-            className="mt-1 bg-muted border-dashed"
+            onChange={handleOuncesChange}
+            placeholder="Enter fluid ounces"
+            aria-label="Fluid ounces input"
+            className="mt-1"
           />
         </div>
       </CardContent>

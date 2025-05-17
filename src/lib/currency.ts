@@ -1,3 +1,4 @@
+
 export interface ExchangeRateData {
   rate: number;
   lastUpdated: string;
@@ -7,18 +8,11 @@ const EXCHANGE_RATE_STORAGE_KEY = 'baliBuddyExchangeRateIDRtoUSD';
 
 // Mock API call - in a real app, replace this with an actual API fetch
 export async function fetchExchangeRateIDRtoUSD(): Promise<number> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => { // Removed reject and network error simulation
     setTimeout(() => {
-      // Simulate network delay and potential failure
-      if (Math.random() < 0.9) { // 90% success rate
-        // Simulate a rate fluctuation
-        const baseRate = 15000;
-        const fluctuation = (Math.random() - 0.5) * 500; // +/- 250
-        resolve(baseRate + fluctuation);
-      } else {
-        reject(new Error('Failed to fetch exchange rate. Network error.'));
-      }
-    }, 1000); // 1 second delay
+      // Always resolve with the hardcoded rate
+      resolve(16500);
+    }, 500); // Reduced delay slightly, can be 0 if instant is preferred
   });
 }
 

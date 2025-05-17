@@ -14,29 +14,31 @@ export function MlToOzConverter() {
   const [ounces, setOunces] = useState<string>('');
   const [lastChanged, setLastChanged] = useState<'ml' | 'oz' | null>(null);
 
+  // Calculate ounces from milliliters
   useEffect(() => {
-    if (lastChanged === 'oz' || milliliters === '') {
-      if (milliliters === '' && lastChanged === 'ml') setOunces('');
+    if (lastChanged === 'oz') return;
+
+    if (milliliters === '') {
+      setOunces('');
       return;
     }
     const mlNum = parseFloat(milliliters);
     if (!isNaN(mlNum)) {
       setOunces((mlNum * ML_TO_OZ_FACTOR).toFixed(2));
-    } else {
-      setOunces('Invalid input');
     }
   }, [milliliters, lastChanged]);
 
+  // Calculate milliliters from ounces
   useEffect(() => {
-    if (lastChanged === 'ml' || ounces === '') {
-      if (ounces === '' && lastChanged === 'oz') setMilliliters('');
+    if (lastChanged === 'ml') return;
+
+    if (ounces === '') {
+      setMilliliters('');
       return;
     }
     const ozNum = parseFloat(ounces);
     if (!isNaN(ozNum)) {
       setMilliliters((ozNum / ML_TO_OZ_FACTOR).toFixed(2));
-    } else {
-      setMilliliters('Invalid input');
     }
   }, [ounces, lastChanged]);
 

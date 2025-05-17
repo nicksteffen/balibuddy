@@ -36,7 +36,7 @@ export function IdrToUsdConverter() {
   const loadInitialRate = useCallback(async (isRefreshing = false) => {
     setIsLoading(true);
     const storedRate = getStoredExchangeRate();
-    if (storedRate && !isRefreshing) { // Only use stored rate if not explicitly refreshing and it exists
+    if (storedRate && !isRefreshing && !exchangeRateData) { // Use stored rate if not refreshing, it exists, and no current rate
       setExchangeRateData(storedRate);
     }
 
@@ -44,17 +44,17 @@ export function IdrToUsdConverter() {
       try {
         const fetchedRate = await fetchExchangeRateIDRtoUSD();
         const newRateData = storeExchangeRate(fetchedRate);
-        setExchangeRateData(newRateData);
+        setExchangeRateData(newRateData); // This will trigger useEffects for conversion
         if (isRefreshing) {
           toast({ title: "Exchange rate refreshed!", description: `New IDR to USD rate: ${newRateData.rate.toFixed(2)}` });
-        } else if (!storedRate) {
+        } else if (!storedRate || (storedRate && storedRate.rate !== newRateData.rate)) {
            toast({ title: "Exchange rate updated", description: `IDR to USD rate: ${newRateData.rate.toFixed(2)}` });
         }
       } catch (error) {
         if (isRefreshing || !storedRate) {
           toast({ variant: "destructive", title: "Error fetching rate", description: "Could not fetch new exchange rate. Using stored rate if available." });
         }
-        if (!exchangeRateData && storedRate) { // If fetch fails but we had a stored rate initially not set due to refresh
+        if (!exchangeRateData && storedRate) { 
             setExchangeRateData(storedRate);
         }
       }
@@ -64,46 +64,55 @@ export function IdrToUsdConverter() {
         toast({ variant: "destructive", title: "Offline", description: "Cannot refresh rate. No internet connection." });
     }
     setIsLoading(false);
-  }, [toast, isOnline, exchangeRateData]); // Added exchangeRateData to ensure it has latest value if fetch fails during refresh
+  }, [toast, isOnline, exchangeRateData]);
 
 
   useEffect(() => {
     loadInitialRate();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // loadInitialRate is memoized and its dependencies are managed.
+  }, []); // loadInitialRate is memoized.
 
+  // Calculate USD from IDR
   useEffect(() => {
-    if (lastChanged === 'usd' || !exchangeRateData) {
-       if (idrAmount === '' && lastChanged !== 'usd') setUsdAmount('');
+    if (lastChanged === 'usd') return; // If USD was just manually changed, don't re-calculate it
+
+    if (!exchangeRateData || exchangeRateData.rate <= 0) {
+      // Potentially clear usdAmount if rate is invalid/unavailable, or show a message
+      // For now, if idrAmount is also empty, usdAmount will be cleared. Otherwise, it might show stale data.
+      // If idrAmount is empty, clear usdAmount
+      if (idrAmount === '') setUsdAmount('');
       return;
     }
+
     if (idrAmount === '') {
       setUsdAmount('');
       return;
     }
     const idrNum = parseFloat(idrAmount);
-    if (!isNaN(idrNum) && exchangeRateData.rate > 0) {
+    if (!isNaN(idrNum)) {
       setUsdAmount((idrNum / exchangeRateData.rate).toFixed(2));
-    } else {
-      setUsdAmount('Invalid input');
     }
+    // If idrNum is NaN, usdAmount won't update from here.
   }, [idrAmount, exchangeRateData, lastChanged]);
 
+  // Calculate IDR from USD
   useEffect(() => {
-    if (lastChanged === 'idr' || !exchangeRateData) {
-      if (usdAmount === '' && lastChanged !== 'idr') setIdrAmount('');
+    if (lastChanged === 'idr') return; // If IDR was just manually changed, don't re-calculate it
+
+    if (!exchangeRateData || exchangeRateData.rate <= 0) {
+      if (usdAmount === '') setIdrAmount('');
       return;
     }
-     if (usdAmount === '') {
+    
+    if (usdAmount === '') {
       setIdrAmount('');
       return;
     }
     const usdNum = parseFloat(usdAmount);
-    if (!isNaN(usdNum) && exchangeRateData.rate > 0) {
+    if (!isNaN(usdNum)) {
       setIdrAmount((usdNum * exchangeRateData.rate).toFixed(0)); // IDR usually whole number
-    } else {
-      setIdrAmount('Invalid input');
     }
+    // If usdNum is NaN, idrAmount won't update from here.
   }, [usdAmount, exchangeRateData, lastChanged]);
 
   const handleIdrChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -117,7 +126,7 @@ export function IdrToUsdConverter() {
   };
   
   const handleRefreshRate = () => {
-    loadInitialRate(true); // Pass true to indicate it's a refresh action
+    loadInitialRate(true); 
   };
 
   const lastUpdatedDate = exchangeRateData?.lastUpdated 
@@ -161,9 +170,9 @@ export function IdrToUsdConverter() {
       </CardContent>
       <CardFooter className="flex flex-col items-start space-y-2 pt-4">
         <div className="text-xs text-muted-foreground">
-          Current Rate (1 USD): {exchangeRateData ? `Rp ${exchangeRateData.rate.toFixed(2)}` : (isLoading && !exchangeRateData ? 'Loading...' : 'N/A')}
+          Current Rate (1 USD): {exchangeRateData ? `Rp ${exchangeRateData.rate.toFixed(2)}` : (isLoading ? 'Loading...' : 'N/A')}
           <br />
-          Last Updated: {isLoading && !exchangeRateData ? 'Loading...' : lastUpdatedDate}
+          Last Updated: {isLoading && !exchangeRateData?.lastUpdated ? 'Loading...' : lastUpdatedDate}
         </div>
         <Button onClick={handleRefreshRate} disabled={isLoading || !isOnline} className="w-full sm:w-auto">
           {isLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}

@@ -14,30 +14,34 @@ export function MilesToKmConverter() {
   const [kilometers, setKilometers] = useState<string>('');
   const [lastChanged, setLastChanged] = useState<'miles' | 'km' | null>(null);
 
+  // Calculate kilometers from miles
   useEffect(() => {
-    if (lastChanged === 'km' || miles === '') {
-      if (miles === '' && lastChanged === 'miles') setKilometers('');
+    if (lastChanged === 'km') return; // If kilometers was just manually changed, don't re-calculate it
+
+    if (miles === '') {
+      setKilometers('');
       return;
     }
     const milesNum = parseFloat(miles);
     if (!isNaN(milesNum)) {
       setKilometers((milesNum * MILE_TO_KM_FACTOR).toFixed(2));
-    } else {
-      setKilometers('Invalid input');
     }
+    // If milesNum is NaN (e.g. "1.2.a"), kilometers won't update, allowing user to correct 'miles' input.
   }, [miles, lastChanged]);
 
+  // Calculate miles from kilometers
   useEffect(() => {
-    if (lastChanged === 'miles' || kilometers === '') {
-      if (kilometers === '' && lastChanged === 'km') setMiles('');
+    if (lastChanged === 'miles') return; // If miles was just manually changed, don't re-calculate it
+
+    if (kilometers === '') {
+      setMiles('');
       return;
     }
     const kmNum = parseFloat(kilometers);
     if (!isNaN(kmNum)) {
       setMiles((kmNum / MILE_TO_KM_FACTOR).toFixed(2));
-    } else {
-      setMiles('Invalid input');
     }
+    // If kmNum is NaN, miles won't update.
   }, [kilometers, lastChanged]);
 
   const handleMilesChange = (e: ChangeEvent<HTMLInputElement>) => {

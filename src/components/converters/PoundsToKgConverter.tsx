@@ -14,29 +14,31 @@ export function PoundsToKgConverter() {
   const [kilograms, setKilograms] = useState<string>('');
   const [lastChanged, setLastChanged] = useState<'pounds' | 'kg' | null>(null);
 
+  // Calculate kilograms from pounds
   useEffect(() => {
-    if (lastChanged === 'kg' || pounds === '') {
-      if (pounds === '' && lastChanged === 'pounds') setKilograms('');
+    if (lastChanged === 'kg') return; 
+
+    if (pounds === '') {
+      setKilograms('');
       return;
     }
     const poundsNum = parseFloat(pounds);
     if (!isNaN(poundsNum)) {
       setKilograms((poundsNum * POUND_TO_KG_FACTOR).toFixed(2));
-    } else {
-      setKilograms('Invalid input');
     }
   }, [pounds, lastChanged]);
 
+  // Calculate pounds from kilograms
   useEffect(() => {
-    if (lastChanged === 'pounds' || kilograms === '') {
-      if (kilograms === '' && lastChanged === 'kg') setPounds('');
+    if (lastChanged === 'pounds') return;
+
+    if (kilograms === '') {
+      setPounds('');
       return;
     }
     const kgNum = parseFloat(kilograms);
     if (!isNaN(kgNum)) {
       setPounds((kgNum / POUND_TO_KG_FACTOR).toFixed(2));
-    } else {
-      setPounds('Invalid input');
     }
   }, [kilograms, lastChanged]);
 
